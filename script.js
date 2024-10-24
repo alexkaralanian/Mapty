@@ -76,11 +76,13 @@ class App {
   #map;
   #mapEvent;
   #workouts = [];
+  #mapZoomLevel = 13;
 
   constructor() {
     this._getPosition();
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevationField);
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -101,7 +103,7 @@ class App {
 
     const coords = [latitude, longitude];
 
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
@@ -187,9 +189,8 @@ class App {
   }
 
   _renderWorkout(workout) {
-    console.log(workout);
     let html = `
-      <li class="workout workout--${workout.name}" data-id="${workout.id}">
+      <li class="workout workout--${workout.type}" data-id="${workout.id}">
         <h2 class="workout__title">${workout.description}</h2>
         <div class="workout__details">
           <span class="workout__icon">🏃‍♂️</span>
@@ -227,7 +228,7 @@ class App {
             <span class="workout__unit">km/h</span>
           </div>
           <div class="workout__details">
-            <span class="workout__icon">🦶🏼</span>
+            <span class="workout__icon">⛰️</span>
             <span class="workout__value">${workout.elevationGain}</span>
             <span class="workout__unit">m</span>
           </div>
@@ -248,6 +249,24 @@ class App {
     form.style.display = 'none';
     form.classList.add('hidden');
     setTimeout(() => (form.style.display = 'grid'), 1000);
+  }
+
+  _moveToPopup(evt) {
+    // selects the closest parent element of class we passed in
+    const workoutElement = evt.target.closest('.workout');
+
+    if (workoutElement) {
+      const workout = this.#workouts.find(
+        work => work.id === +workoutElement.dataset.id
+      );
+
+      this.#map.setView(workout.coords, this.#mapZoomLevel, {
+        animate: true,
+        pan: {
+          duration: 1,
+        },
+      });
+    }
   }
 }
 
